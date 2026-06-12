@@ -23,6 +23,14 @@
         <span>有效通知</span>
         <strong>{{ activeNotifications }}</strong>
       </div>
+      <div class="stat-card">
+        <span>今日待签到</span>
+        <strong>{{ visitStats.pendingCheckin }}</strong>
+      </div>
+      <div class="stat-card">
+        <span>超时未签退</span>
+        <strong>{{ visitStats.overdueCheckout }}</strong>
+      </div>
     </div>
 
     <div class="section-grid">
@@ -64,24 +72,28 @@ import PageHeader from '../components/PageHeader.vue'
 import { appointmentsApi } from '../services/appointments'
 import { notificationsApi } from '../services/notifications'
 import { residentsApi } from '../services/residents'
+import { visitsApi } from '../services/visits'
 
 const residents = ref([])
 const appointments = ref([])
 const notifications = ref([])
+const visitStats = ref({ pendingCheckin: 0, overdueCheckout: 0 })
 const levelText = { info: '普通', warning: '重要', critical: '紧急' }
 
 const pendingCount = computed(() => appointments.value.filter((item) => item.status === 'pending').length)
 const activeNotifications = computed(() => notifications.value.filter((item) => item.is_active).length)
 
 onMounted(async () => {
-  const [residentData, appointmentData, notificationData] = await Promise.all([
+  const [residentData, appointmentData, notificationData, statsData] = await Promise.all([
     residentsApi.list(),
     appointmentsApi.list(),
-    notificationsApi.list()
+    notificationsApi.list(),
+    visitsApi.dashboardStats()
   ])
   residents.value = residentData.results
   appointments.value = appointmentData.results
   notifications.value = notificationData.results
+  visitStats.value = { pendingCheckin: statsData.pending_checkin, overdueCheckout: statsData.overdue_checkout }
 })
 
 function formatTime(value) {
